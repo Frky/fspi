@@ -36,8 +36,8 @@ class Comptoir(object):
         else:
             # Generate random id for the comptoir 
             self.__id = "".join([choice(Comptoir.charset) for x in xrange(Comptoir.id_len)])
-            # List of connected users
-            self.__connected = list()
+        # List of connected users
+        self.__connected = list()
         Comptoir.cid.append(self.__id)
 
 
@@ -71,4 +71,22 @@ class Comptoir(object):
         if user not in self.__connected:
             raise NotConnectedException
         self.__connected.remove(user)
+
+
+    def new_msg(self, msg, user):
+        """
+            Handler of new messages on comptoir
+            Forward the message to all users connected.
+
+            @raise NotConnected if user is not connected 
+                    to the comptoir
+
+        """
+        if user not in self.__connected:
+            raise NotConnectedException
+        for u in self.__connected:
+            if u == user:
+                continue
+            u.send_msg(msg)
+        print "[{0}] {1}".format(user, msg)
 

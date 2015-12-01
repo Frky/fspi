@@ -3,7 +3,7 @@
 from random import choice
 
 from test import Test
-from src.comptoir import Comptoir
+from src.chat.comptoir import Comptoir
 from src.exception.comptoir_already_exists import ComptoirAlreadyExistsException
 from src.exception.already_connected import AlreadyConnectedException
 

@@ -1,0 +1,10 @@
+
+Server listening
+
+Client connect:
+    1) C sends nickname
+    2) S ack for nickname
+    # TODO auth
+    3) C sends cid
+    4) S ack for cid
+
