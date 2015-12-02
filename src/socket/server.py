@@ -3,11 +3,13 @@
 import socket
 import thread
 
+from src.socket.default import DEFAULT_PORT
 from src.chat.chat import Chat
 from src.chat.user import User
 
 # TODO parse config file for server
 # TODO add log file of connections (IP)
+# TODO authentication of clients
 
 class Server(object):
     """
@@ -16,7 +18,7 @@ class Server(object):
 
     """
 
-    def __init__(self, port=4399):
+    def __init__(self, port=DEFAULT_PORT):
         self.port = port
         self.addr = "127.0.0.1"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
