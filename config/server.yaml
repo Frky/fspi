@@ -1,0 +1,9 @@
+general:
+    name:   "*NEW IS NOT ALWAYS BETTER*"
+    desc:   "For CLI lovers only"
+socket:
+    port:   4399
+
+database:
+    path:   "./db/fspi.sqlite3"
+    type:   "sqlite3"
