@@ -43,6 +43,8 @@ class Chat(object):
         if user not in self.usr:
             raise NotConnectedException
         print "[log] Disconnected: {0}".format(user)
+        for cid in user.cid:
+            self.cmptr[cid].disconnect(user)
         self.usr.remove(user)
 
 
@@ -68,7 +70,7 @@ class Chat(object):
             Handler for the reception of a packet from user
 
         """
-        if packet == "/quit":
+        if packet == "/quit" or packet == "":
             return True
         # Follow packet to relevant comptoir
         self.cmptr[cid].new_msg(packet, user)

@@ -6,5 +6,9 @@ from src.socket.server import Server
 # Creation of a new server
 svr = Server()
 
-# Idle the server
-svr.idle()
+try:
+    # Idle the server
+    svr.idle()
+except KeyboardInterrupt:
+    del(svr)
+    print

@@ -3,7 +3,7 @@
 import socket
 import thread
 
-from src.socket.default import DEFAULT_PORT
+from src.socket.default import DEFAULT_PORT, ACK
 from src.chat.chat import Chat
 from src.chat.user import User
 
@@ -23,38 +23,40 @@ class Server(object):
         self.addr = "127.0.0.1"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.chat = Chat()
+        self.__connected = list()
 
 
     def idle(self):
-        try:
-            self.sock.bind(('', self.port))
-            self.sock.listen(0)
-            while True:
-                # Waiting for a new connection
-                csock, addr = self.sock.accept()
-                # Threading the handler for the new client
-                thread.start_new_thread(self.handle_connection, (csock, addr))
-        # TODO change to any exception
-        except Exception:
-            self.sock.close()
+        self.sock.bind(('', self.port))
+        self.sock.listen(0)
+        while True:
+            # Waiting for a new connection
+            # TODO log connection
+            csock, addr = self.sock.accept()
+            print("{0} Connection opened".format(addr[0]))
+            # Create a new user instance
+            usr = User("", csock)
+            self.__connected.append(usr)
+            # Threading the handler for the new client
+            thread.start_new_thread(self.handle_connection, (usr,))
 
 
-    def handle_connection(self, csock, addr):
-        # TODO log connection
-        print("{0} Connection opened".format(addr[0]))
+    def handle_connection(self, usr):
         # Wait for username
-        nick = csock.recv(1024)[:-1]
-        # Create a user instance
-        usr = User(nick, csock)
+        usr.nick = usr.sock.recv(1024)[:-1]
         # Connect the user
         self.chat.connect(usr)
-        cid = csock.recv(1024)[:-1]
+        usr.send_ack()
         # Join the comptoir
+        cid = usr.sock.recv(1024)[:-1]
         self.chat.join(usr, cid)
-        usr.send_msg("Connected to {0}".format(cid))
+        usr.send_msg(ACK)
         quit = False
         while not quit:
-            quit = self.chat.recved(csock.recv(1024)[:-1], cid, usr)
-        print("{0} Connection closed".format(addr[0]))
+            quit = self.chat.recved(usr.sock.recv(1024)[:-1], cid, usr)
         self.chat.disconnect(usr)
-        csock.close()
+        usr.sock.close()
+
+
+    def __del__(self):
+        self.sock.close()

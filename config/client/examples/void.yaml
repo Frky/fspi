@@ -1,0 +1,10 @@
+general:
+    nick:   "void"
+
+server:
+    addr:   "127.0.0.1"
+    port:   4399
+
+comptoir:
+    cid:    "6xeTz276zZ"
+    key:    ""

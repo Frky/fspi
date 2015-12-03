@@ -60,6 +60,10 @@ class Comptoir(object):
         if user in self.__connected:
             raise AlreadyConnectedException
         self.__connected.append(user)
+        user.cid.append(self.id)
+        for u in self.__connected:
+            if u != user:
+                u.send_msg("{0} just appeared".format(user))
 
 
     def disconnect(self, user):
@@ -71,6 +75,10 @@ class Comptoir(object):
         if user not in self.__connected:
             raise NotConnectedException
         self.__connected.remove(user)
+        user.cid.remove(self.id)
+        for u in self.__connected:
+            if u != user:
+                u.send_msg("{0} just ran away".format(user))
 
 
     def new_msg(self, msg, user):
@@ -85,8 +93,9 @@ class Comptoir(object):
         if user not in self.__connected:
             raise NotConnectedException
         for u in self.__connected:
-            if u == user:
-                continue
-            u.send_msg(msg)
-        print "[{0}] {1}".format(user, msg)
+            u.send_msg(self.format_msg(msg, user))
+
+
+    def format_msg(self, msg, user):
+        return "[{0}] {1}".format(user, msg)
 
