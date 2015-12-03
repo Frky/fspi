@@ -10,7 +10,7 @@ class ParserTest(Test):
 
     def __init__(self):
         super(ParserTest, self).__init__()
-        self.name = "Comptoir"
+        self.name = "Parser"
 
 
     def test_init(self):
@@ -78,10 +78,42 @@ class ParserTest(Test):
             self.ko("depth one -- two fields required")
 
         # Negative tests
-        # One field missing
-        # Several fields missing
-        # All fields missing
-
+        # One field required not present, zero present
+        try:
+            p.check_required_fields({ "FOO": ""})
+            self.ko("depth one -- one required field missing")
+        except ConfigFileException:
+            self.ok("depth one -- one required field missing")
+        # One field required not present, one present
+        try:
+            p.check_required_fields({ "FOO": "", "bar": ""})
+            self.ko("depth one -- one required field missing, one present")
+        except ConfigFileException:
+            self.ok("depth one -- one required field missing, one present")
+        # One field required not present, two present
+        try:
+            p.check_required_fields({ "FOO": "", "bar": "", "foobar": ""})
+            self.ko("depth one -- one required field missing, two present")
+        except ConfigFileException:
+            self.ok("depth one -- one required field missing, two present")
+        # Two fields required not present, zero present
+        try:
+            p.check_required_fields({ "FOO": "", "BAR": "", "foobar": ""})
+            self.ko("depth one -- two required fields missing")
+        except ConfigFileException:
+            self.ok("depth one -- two required fields missing")
+        # Two fields required not present, one present
+        try:
+            p.check_required_fields({ "FOO": "", "BAR": "", "foobar": ""})
+            self.ko("depth one -- two required fields missing, one present")
+        except ConfigFileException:
+            self.ok("depth one -- two required fields missing, one present")
+        # Three fields required not present
+        try:
+            p.check_required_fields({ "FOO": "", "BAR": "", "FOOBAR": ""})
+            self.ko("depth one -- all required fields missing")
+        except ConfigFileException:
+            self.ok("depth one -- all required fields missing")
 
         # Check a file with a depth of two
         # Positive tests
@@ -99,3 +131,4 @@ class ParserTest(Test):
         self.test_parse()
         self.test_check()
         self.stop()
+
