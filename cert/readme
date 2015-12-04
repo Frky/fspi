@@ -1,0 +1,3 @@
+Note that the key and cert in this repo are for developing purpose only.
+They are included into the repo for anyone to be able to test the server.
+Of course, they are not the ones to be used in production.

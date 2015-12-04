@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-import socket
+import socket, ssl
 import thread
 
 from src.socket.default import DEFAULT_PORT, ACK
@@ -10,6 +10,7 @@ from src.chat.user import User
 # TODO parse config file for server
 # TODO add log file of connections (IP)
 # TODO authentication of clients
+# TODO SSL Authentication w/ certificate (for server auth.)
 
 class Server(object):
     """
@@ -20,8 +21,24 @@ class Server(object):
 
     def __init__(self, port=DEFAULT_PORT):
         self.port = port
-        self.addr = "127.0.0.1"
+        
+        # Set SSL Context
+        self.context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.context.verify_mode = ssl.CERT_NONE
+        self.context.set_ciphers("HIGH")
+
+        # Create socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Wrap socket through ssl
+        self.sock = ssl.wrap_socket(
+                                        self.sock, 
+                                        server_side=True, 
+                                        ciphers="HIGH", 
+                                        ssl_version=ssl.PROTOCOL_TLSv1, 
+                                        certfile="cert/server.crt",
+                                        keyfile="cert/server.key", 
+                                    )
+
         self.chat = Chat()
         self.__connected = list()
 

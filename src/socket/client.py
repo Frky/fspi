@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
-import socket
 import thread
+import socket, ssl
 
 from src.config.client_parser import ClientParser
 from src.exception.config_file import ConfigFileException
@@ -29,8 +29,12 @@ class Client(object):
         self.nick = self.cfg["general"]["nick"]
         self.server = (self.cfg["server"]["addr"], self.cfg["server"]["port"])
         self.cid = self.cfg["comptoir"]["cid"]
-        # Client socket and connection boolean
+
+        # Client socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Wrapping socket for ssl
+        self.sock = ssl.wrap_socket(self.sock, ciphers="HIGH")
+
         self.connected = False
         self.ui = CommandLineUI(self.nick, self.cid)
         self.init = True
