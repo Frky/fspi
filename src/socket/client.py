@@ -29,6 +29,7 @@ class Client(object):
         self.nick = self.cfg["general"]["nick"]
         self.server = (self.cfg["server"]["addr"], self.cfg["server"]["port"])
         self.cid = self.cfg["comptoir"]["cid"]
+        self.key = self.cfg["comptoir"]["key"]
 
         # Client socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -62,6 +63,7 @@ class Client(object):
         if not self.connected:
             raise NotConnectedException
         self.sock.send(self.cid + "\n")
+        self.sock.send(self.key + "\n")
         # TODO other way to check the ACK
         self.sock.recv(1024)
 
@@ -69,7 +71,7 @@ class Client(object):
     def send(self):
         while True:
             data = self.ui.get_input()
-            self.sock.send(data + "\n")
+            self.sock.send(self.key + "/" + data + "\n")
 
 
     def close(self):

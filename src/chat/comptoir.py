@@ -5,6 +5,7 @@ from random import choice
 from src.exception.already_connected import AlreadyConnectedException
 from src.exception.not_connected import NotConnectedException
 from src.exception.comptoir_already_exists import ComptoirAlreadyExistsException
+from src.exception.invalid_hash import InvalidHashException
 
 
 class Comptoir(object):
@@ -13,7 +14,7 @@ class Comptoir(object):
     id_len = 10
     cid = list()
 
-    def __init__(self, id=""):
+    def __init__(self, id="", keyhash=""):
         """
             Creation of a new comptoir. If no id is specified, 
             a random id is generated.
@@ -36,9 +37,15 @@ class Comptoir(object):
         else:
             # Generate random id for the comptoir 
             self.__id = "".join([choice(Comptoir.charset) for x in xrange(Comptoir.id_len)])
+        # Hash of the comptoir key
+        self.__keyhash = keyhash
         # List of connected users
         self.__connected = list()
         Comptoir.cid.append(self.__id)
+
+
+    def is_ciphered(self):
+        return self.__keyhash != ""
 
 
     @property
@@ -50,7 +57,13 @@ class Comptoir(object):
         return self.__id 
 
 
-    def connect(self, user):
+    def check_hash(self, keyhash):
+        print "Matching {0} w/ {1} ...".format(keyhash, self.__keyhash)
+        if self.is_ciphered() and self.__keyhash != keyhash:
+            raise InvalidHashException
+
+
+    def connect(self, user, keyhash=""):
         """
             Connect a new user to the comptoir.
             First test if the user is already connected
@@ -59,6 +72,7 @@ class Comptoir(object):
         """
         if user in self.__connected:
             raise AlreadyConnectedException
+        self.check_hash(keyhash)
         self.__connected.append(user)
         user.cid.append(self.id)
         for u in self.__connected:
@@ -81,9 +95,10 @@ class Comptoir(object):
                 u.send_msg("{0} just ran away".format(user))
 
 
-    def new_msg(self, msg, user):
+    def new_msg(self, msg, user, keyhash=""):
         """
             Handler of new messages on comptoir
+            Check the hash of the comptoir key first.
             Forward the message to all users connected.
 
             @raise NotConnected if user is not connected 
@@ -92,6 +107,7 @@ class Comptoir(object):
         """
         if user not in self.__connected:
             raise NotConnectedException
+        self.check_hash(keyhash)
         for u in self.__connected:
             u.send_msg(self.format_msg(msg, user))
 

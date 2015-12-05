@@ -16,6 +16,7 @@ class ClientParser(object):
                             },
                         "comptoir": {
                                         "cid": "",
+                                        "key": "",
                             },
                     }
 

@@ -5,6 +5,7 @@ from src.chat.comptoir import Comptoir
 
 from src.exception.already_connected import AlreadyConnectedException
 from src.exception.not_connected import NotConnectedException
+from src.exception.invalid_hash import InvalidHashException
 
 
 class Chat(object):
@@ -48,7 +49,7 @@ class Chat(object):
         self.usr.remove(user)
 
 
-    def join(self, user, cid):
+    def join(self, user, cid, keyhash):
         """
             Join the comptoir cid
             This function creates the comptoir if it does not
@@ -61,18 +62,23 @@ class Chat(object):
         if user not in self.usr:
             raise NotConnectedException
         if cid not in self.cmptr.keys():
-            self.cmptr[cid] = Comptoir(cid)
-        self.cmptr[cid].connect(user)
+            print "Creating comptoir"
+            self.cmptr[cid] = Comptoir(cid, keyhash)
+        self.cmptr[cid].connect(user, keyhash)
 
     
-    def recved(self, packet, cid, user):
+    def recved(self, packet, cid, user, keyhash):
         """
             Handler for the reception of a packet from user
 
         """
         if packet == "/quit" or packet == "":
             return True
-        # Follow packet to relevant comptoir
-        self.cmptr[cid].new_msg(packet, user)
+        try:
+            # Follow packet to relevant comptoir
+            self.cmptr[cid].new_msg(packet, user, keyhash)
+        except InvalidHashException:
+            # TODO this should not be sent by Chat object ...
+            user.sock.send("Message rejected: invalid hash.\n")
         return False
 

@@ -66,14 +66,18 @@ class Server(object):
         usr.send_ack()
         # Join the comptoir
         cid = usr.sock.recv(1024)[:-1]
-        self.chat.join(usr, cid)
+        keyhash = usr.sock.recv(1024)[:-1]
+        self.chat.join(usr, cid, keyhash)
         usr.send_msg(ACK)
         quit = False
         while not quit:
-            quit = self.chat.recved(usr.sock.recv(1024)[:-1], cid, usr)
+            data = usr.sock.recv(1024)[:-1]
+            keyhash, msg = data[:data.find("/")], data[data.find("/") + 1:]
+            quit = self.chat.recved(msg, cid, usr, keyhash)
         self.chat.disconnect(usr)
         usr.sock.close()
 
 
     def __del__(self):
         self.sock.close()
+
