@@ -58,7 +58,6 @@ class Comptoir(object):
 
 
     def check_hash(self, keyhash):
-        print "Matching {0} w/ {1} ...".format(keyhash, self.__keyhash)
         if self.is_ciphered() and self.__keyhash != keyhash:
             raise InvalidHashException
 

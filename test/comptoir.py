@@ -1,11 +1,21 @@
 #-*- coding: utf-8 -*-
 
-from random import choice
+from random import choice, shuffle
 
 from test import Test
 from src.chat.comptoir import Comptoir
 from src.exception.comptoir_already_exists import ComptoirAlreadyExistsException
 from src.exception.already_connected import AlreadyConnectedException
+from src.exception.not_connected import NotConnectedException
+
+
+class UserForComptoirTest(object):
+    def __init__(self, nick):
+        self.nick = nick
+        self.cid = list()
+    def send_msg(self, msg):
+        pass
+
 
 class ComptoirTest(Test):
 
@@ -48,37 +58,159 @@ class ComptoirTest(Test):
         c = Comptoir()
         # Test connection of a single user
         try:
-            c.connect("yo")
+            c.connect(UserForComptoirTest("yo"))
             self.ok("single connection")
-        except Exception:
+        except Exception as e:
             self.ko("single connection")
         # Test connection of other users
         try:
-            for i in xrange(1000):
-                c.connect("{0}".format(i))
+            for i in xrange(100):
+                c.connect(UserForComptoirTest("{0}".format(i)))
             self.ok("multiple connections")
-        except Exception:
+        except Exception as e:
             self.ko("multiple connections")
         # Test single user connected on two comptoirs
         foo = Comptoir()
         bar = Comptoir()
+        yo = UserForComptoirTest("yo")
         try:
-            foo.connect("yo")
-            bar.connect("yo")
+            foo.connect(yo)
+            bar.connect(yo)
             self.ok("connetion on multiple comptoirs")
         except Exception:
             self.ko("connetion on multiple comptoirs")
         # Test single user multiple connections on the same comptoir
         try:
             # This line should raise an exception
-            foo.connect("yo")
-            self.ko("same user connected twice")
+            foo.connect(yo)
         except AlreadyConnectedException:
             self.ok("same user connected twice")
 
 
     def test_disconnect(self):
-        raise NotImplemented
+        # Creation of two comptoirs for tests
+        foo = Comptoir()
+        bar = Comptoir()
+        # Creation of two users
+        yo = UserForComptoirTest("yo")
+        lo = UserForComptoirTest("lo")
+        # Try to connect and deconnect a user from a comptoir
+        try:
+            foo.connect(yo)
+            foo.disconnect(yo)
+            self.ok("single connection/disconnection")
+        except Exception:
+            self.ko("single connection/disconnection")
+        # Try to connect and deconnect successively one user
+        try:
+            for i in xrange(1000):
+                foo.connect(yo)
+                foo.disconnect(yo)
+            self.ok("multiple connections/disconnections from one user")
+        except Exception:
+            self.ko("multiple connections/disconnections from one user")
+        # Try to connect two users and disconnect them in the same order
+        try:
+            foo.connect(yo)
+            foo.connect(lo)
+            foo.disconnect(yo)
+            foo.disconnect(lo)
+            self.ok("two users connection/disconnection")
+        except Exception:
+            self.ko("two users connection/disconnection")
+        # Try to connect two users and disconnect them in revert order
+        try:
+            foo.connect(yo)
+            foo.connect(lo)
+            foo.disconnect(lo)
+            foo.disconnect(yo)
+            self.ok("two users connection/disconnection - reverse order")
+        except Exception:
+            self.ko("two users connection/disconnection - reverse order")
+        # Connect and disconnect a lot of users
+        try:
+            u = list()
+            for i in xrange(100):
+                u.append(UserForComptoirTest(str(i)))
+                foo.connect(u[-1])
+            for i in xrange(len(u)):
+                foo.disconnect(u[i])
+            self.ok("multiple users connection/disconnection")
+        except Exception:
+            self.ko("multiple users connection/disconnection")
+        # Connect and disconnect a lot of users in shuffle order
+        try:
+            u = list()
+            for i in xrange(100):
+                u.append(UserForComptoirTest(str(i)))
+                foo.connect(u[-1])
+            shuffle(u)
+            for i in xrange(len(u)):
+                foo.disconnect(u[i])
+            self.ok("multiple users connection/disconnection - shuffle order")
+        except Exception as e:
+            self.ko("multiple users connection/disconnection - shuffle order")
+        # Disconnect a non-connected user
+        try:
+            # This line should raise an exception
+            foo.disconnect(UserForComptoirTest("pwd"))
+            self.ko("disconnect a non-connected user")
+        except NotConnectedException:
+            self.ok("disconnect a non-connected user")
+        # Disconnect an already disconnected user
+        try:
+            foo.connect(yo)
+            foo.disconnect(yo)
+            # This line should raise an exception
+            foo.disconnect(yo)
+            self.ko("disconnect twice the same user")
+        except NotConnectedException:
+            self.ok("disconnect twice the same user")
+        # Connect a user and disconnect another one
+        try:
+            foo.connect(yo)
+            # This line should raise an exception
+            foo.disconnect(lo)
+            self.ko("disconnect the wrong user")
+        except NotConnectedException:
+            self.ok("disconnect the wrong user")
+        finally:
+            foo.disconnect(yo)
+        # Connection and disconnection on one comptoir, then on another one
+        try:
+            foo.connect(yo)
+            foo.disconnect(yo)
+            bar.connect(yo)
+            bar.disconnect(yo)
+            self.ok("connection/disconnection on two comptoirs")
+        except Exception as e:
+            self.ko("connection/disconnection on two comptoirs")
+        # Connection on two comptoirs and disconnection in same order
+        try:
+            foo.connect(yo)
+            bar.connect(yo)
+            foo.disconnect(yo)
+            bar.disconnect(yo)
+            self.ok("connection/disconnection on two comptoirs in the same time")
+        except Exception as e:
+            self.ko("connection/disconnection on two comptoirs in the same time")
+        # Connection on two comptoirs and disconnection in reverse order
+        try:
+            foo.connect(yo)
+            bar.connect(yo)
+            bar.disconnect(yo)
+            foo.disconnect(yo)
+            self.ok("connection/disconnection on two comptoirs in the same time - reverse order")
+        except Exception as e:
+            self.ko("connection/disconnection on two comptoirs in the same time - reverse order")
+        # Connection on one comptoir and disconnection from another
+        try:
+            foo.connect(yo)
+            # This line should throw an exception
+            bar.disconnect(yo)
+            self.ko("disconnect user form the wrong comptoir")
+        except NotConnectedException:
+            self.ok("disconnect user form the wrong comptoir")
 
 
     def run(self):
