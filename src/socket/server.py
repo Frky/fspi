@@ -2,6 +2,7 @@
 
 import socket, ssl
 import thread
+import json
 
 from src.socket.default import DEFAULT_PORT, ACK
 from src.chat.chat import Chat
@@ -60,19 +61,24 @@ class Server(object):
 
     def handle_connection(self, usr):
         # Wait for username
-        usr.nick = usr.sock.recv(1024)[:-1]
+        usr.nick = usr.sock.recv(1024)
         # Connect the user
         self.chat.connect(usr)
         usr.send_ack()
         # Join the comptoir
-        cid = usr.sock.recv(1024)[:-1]
-        keyhash = usr.sock.recv(1024)[:-1]
+        cid = usr.sock.recv(1024)
+        keyhash = usr.sock.recv(1024)
         self.chat.join(usr, cid, keyhash)
         usr.send_msg(ACK)
         quit = False
         while not quit:
-            data = usr.sock.recv(1024)[:-1]
-            keyhash, msg = data[:data.find("/")], data[data.find("/") + 1:]
+            try:
+                data = json.loads(usr.sock.recv(1024))
+                keyhash, msg = data["keyhash"], data["msg"]
+            except ValueError:
+                # TODO send NOACK to client
+                continue
+            # TODO send ACK to client
             quit = self.chat.recved(msg, cid, usr, keyhash)
         self.chat.disconnect(usr)
         usr.sock.close()

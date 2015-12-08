@@ -2,16 +2,19 @@
 
 import thread
 import socket, ssl
+from Crypto.Protocol.KDF import PBKDF2
+from sha3 import sha3_256
 
 from src.config.client_parser import ClientParser
 from src.exception.config_file import ConfigFileException
 from src.exception.not_connected import NotConnectedException
 from src.ui.client.command_line import CommandLineUI
+from src.packer.message import MessagePacker
 
-# TODO parse config file for client
 # TODO authentication of clients
 # TODO Client UI
 # TODO notify UI when connected
+# TODO check default IV security holes
 
 class Client(object):
 
@@ -29,7 +32,11 @@ class Client(object):
         self.nick = self.cfg["general"]["nick"]
         self.server = (self.cfg["server"]["addr"], self.cfg["server"]["port"])
         self.cid = self.cfg["comptoir"]["cid"]
-        self.key = self.cfg["comptoir"]["key"]
+        # Default IV for AES keys 
+        self.iv = str.encode("*#hello,world!#*")
+        # Derive an AES key from a passphrase 
+        self.__key = PBKDF2(self.cfg["comptoir"]["key"], self.iv)
+        self.pkr = MessagePacker(self.__key, self.keyhash)
 
         # Client socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,7 +50,7 @@ class Client(object):
 
     def connect(self):
         self.sock.connect((self.server))
-        self.sock.send(self.nick + "\n")
+        self.sock.send(self.nick)
         # TODO HANDLE ACK CORRECTLY
         self.sock.recv(1024)
         self.connected = True
@@ -55,6 +62,11 @@ class Client(object):
         self.connected = False
 
 
+    @property
+    def keyhash(self):
+        return sha3_256(self.__key).hexdigest()
+
+
     def join(self, cid=None):
         """
             Require connected
@@ -62,16 +74,21 @@ class Client(object):
         """
         if not self.connected:
             raise NotConnectedException
-        self.sock.send(self.cid + "\n")
-        self.sock.send(self.key + "\n")
+        self.sock.send(self.cid)
+        self.sock.send(self.keyhash)
         # TODO other way to check the ACK
         self.sock.recv(1024)
 
 
     def send(self):
         while True:
-            data = self.ui.get_input()
-            self.sock.send(self.key + "/" + data + "\n")
+            msg = self.ui.get_input()
+            pkt = self.pkr.pack(msg)
+            with open("./log", "a") as f:
+                f.write("SYN: ")
+                f.write(str(pkt))
+                f.write("\n")
+            self.sock.send(pkt)
 
 
     def close(self):
@@ -92,7 +109,8 @@ class Client(object):
                 if len(data) == 0:
                     #TODO CHANGE THIS
                     raise NotConnectedException
-                self.ui.new_msg(data)
+                user, msg = self.pkr.unpack(data)
+                self.ui.new_msg("[{0}] {1}".format(user, msg))
         except NotConnectedException:
             self.disconnect()
 

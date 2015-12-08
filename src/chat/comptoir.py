@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 
 from random import choice
+import json
 
 from src.exception.already_connected import AlreadyConnectedException
 from src.exception.not_connected import NotConnectedException
@@ -112,5 +113,9 @@ class Comptoir(object):
 
 
     def format_msg(self, msg, user):
-        return "[{0}] {1}".format(user, msg)
+        data = dict()
+        data["user"] = str(user)
+        data["msg"] = msg
+        print msg
+        return json.dumps(data)
 
