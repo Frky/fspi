@@ -10,12 +10,12 @@ class User(object):
         self.cid = list()
 
     
-    def send_msg(self, msg):
-        self.sock.send(msg + "\n")
+    def send(self, pkt):
+        self.sock.send(pkt.pack() + "\n")
 
 
     def send_ack(self):
-        self.sock.send(ACK)
+        self.sock.send(ACK + "\n")
 
 
     def __str__(self):

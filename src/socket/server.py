@@ -69,17 +69,11 @@ class Server(object):
         cid = usr.sock.recv(1024)
         keyhash = usr.sock.recv(1024)
         self.chat.join(usr, cid, keyhash)
-        usr.send_msg(ACK)
+        usr.send_ack()
         quit = False
         while not quit:
-            try:
-                data = json.loads(usr.sock.recv(1024))
-                keyhash, msg = data["keyhash"], data["msg"]
-            except ValueError:
-                # TODO send NOACK to client
-                continue
             # TODO send ACK to client
-            quit = self.chat.recved(msg, cid, usr, keyhash)
+            quit = self.chat.recved(cid, usr, usr.sock.recv(1024))
         self.chat.disconnect(usr)
         usr.sock.close()
 

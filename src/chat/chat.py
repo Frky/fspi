@@ -2,6 +2,9 @@
 
 
 from src.chat.comptoir import Comptoir
+from src.packet.type import PKT_MESSAGE, PKT_QUIT
+from src.packet.packet import Packet
+from src.packet.message import MessagePacket
 
 from src.exception.already_connected import AlreadyConnectedException
 from src.exception.not_connected import NotConnectedException
@@ -67,18 +70,26 @@ class Chat(object):
         self.cmptr[cid].connect(user, keyhash)
 
     
-    def recved(self, packet, cid, user, keyhash):
+    def recved(self, cid, user, data):
         """
             Handler for the reception of a packet from user
 
         """
-        if packet == "/quit" or packet == "":
+        type = Packet.get_type(data)
+        if type == PKT_QUIT:
+            self.cmptr[cid].disconnect(user)
             return True
-        try:
-            # Follow packet to relevant comptoir
-            self.cmptr[cid].new_msg(packet, user, keyhash)
-        except InvalidHashException:
-            # TODO this should not be sent by Chat object ...
-            user.sock.send("Message rejected: invalid hash.\n")
-        return False
+        elif type == PKT_MESSAGE:
+            msg = MessagePacket(data=data)
+            try:
+                # Follow packet to relevant comptoir
+                self.cmptr[cid].new_msg(msg, user)
+            except InvalidHashException:
+                # TODO this should not be sent by chat object ...
+                # TODO this should be a packed message
+                user.sock.send("Message rejected: invalid hash.\n")
+            return False
+        else:
+            # TODO handle properly this scenario
+            raise NotImplemented
 

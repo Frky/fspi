@@ -9,7 +9,12 @@ from src.config.client_parser import ClientParser
 from src.exception.config_file import ConfigFileException
 from src.exception.not_connected import NotConnectedException
 from src.ui.client.command_line import CommandLineUI
-from src.packer.message import MessagePacker
+from src.packet.packet import Packet
+from src.packet.type import PKT_MESSAGE, PKT_CONNECTED, PKT_DISCONNECTED
+from src.packet.message import MessagePacket
+from src.packet.connected import ConnectedPacket
+from src.packet.disconnected import DisconnectedPacket
+from src.packet.quit import QuitPacket
 
 # TODO authentication of clients
 # TODO Client UI
@@ -36,7 +41,6 @@ class Client(object):
         self.iv = str.encode("*#hello,world!#*")
         # Derive an AES key from a passphrase 
         self.__key = PBKDF2(self.cfg["comptoir"]["key"], self.iv)
-        self.pkr = MessagePacker(self.__key, self.keyhash)
 
         # Client socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,7 +87,10 @@ class Client(object):
     def send(self):
         while True:
             msg = self.ui.get_input()
-            pkt = self.pkr.pack(msg)
+            if msg == "/quit":
+                pkt = QuitPacket().pack()
+            else:
+                pkt = MessagePacket(msg=msg, key=self.__key, keyhash=self.keyhash).pack()
             with open("./log", "a") as f:
                 f.write("SYN: ")
                 f.write(str(pkt))
@@ -109,8 +116,18 @@ class Client(object):
                 if len(data) == 0:
                     #TODO CHANGE THIS
                     raise NotConnectedException
-                user, msg = self.pkr.unpack(data)
-                self.ui.new_msg("[{0}] {1}".format(user, msg))
+                type = Packet.get_type(data)
+                if type == PKT_MESSAGE:
+                    user, msg = MessagePacket(data=data, key=self.__key).unpack() 
+                    self.ui.new_msg("[{0}] {1}".format(user, msg))
+                elif type == PKT_CONNECTED:
+                    user = ConnectedPacket(data=data).unpack()
+                    self.ui.new_msg("{0} just appeared".format(user))
+                elif type == PKT_DISCONNECTED:
+                    user = DisconnectedPacket(data=data).unpack()
+                    self.ui.new_msg("{0} ran away".format(user))
+                else:
+                    raise NotImplemented
         except NotConnectedException:
             self.disconnect()
 

@@ -53,6 +53,9 @@ class Prompter(object):
         return inp
 
     
+    def refresh(self):
+        self.screen.refresh()
+
 
 class CommandLineUI(object):
 
@@ -77,4 +80,5 @@ class CommandLineUI(object):
 
     def new_msg(self, msg):
         self.chatbox.add_line(msg)
+        self.prompter.refresh()
 

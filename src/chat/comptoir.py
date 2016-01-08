@@ -3,6 +3,9 @@
 from random import choice
 import json
 
+from src.packet.connected import ConnectedPacket
+from src.packet.disconnected import DisconnectedPacket
+
 from src.exception.already_connected import AlreadyConnectedException
 from src.exception.not_connected import NotConnectedException
 from src.exception.comptoir_already_exists import ComptoirAlreadyExistsException
@@ -44,7 +47,6 @@ class Comptoir(object):
         self.__connected = list()
         Comptoir.cid.append(self.__id)
 
-
     def is_ciphered(self):
         return self.__keyhash != ""
 
@@ -77,7 +79,7 @@ class Comptoir(object):
         user.cid.append(self.id)
         for u in self.__connected:
             if u != user:
-                u.send_msg("{0} just appeared".format(user))
+                u.send(ConnectedPacket(user=user))
 
 
     def disconnect(self, user):
@@ -92,10 +94,10 @@ class Comptoir(object):
         user.cid.remove(self.id)
         for u in self.__connected:
             if u != user:
-                u.send_msg("{0} just ran away".format(user))
+                u.send(DisconnectedPacket(user=user))
 
 
-    def new_msg(self, msg, user, keyhash=""):
+    def new_msg(self, pkt, user):
         """
             Handler of new messages on comptoir
             Check the hash of the comptoir key first.
@@ -107,15 +109,9 @@ class Comptoir(object):
         """
         if user not in self.__connected:
             raise NotConnectedException
-        self.check_hash(keyhash)
+        self.check_hash(pkt.keyhash)
+        # Overwrite user field to ensure it is correct
+        pkt.user = user
         for u in self.__connected:
-            u.send_msg(self.format_msg(msg, user))
-
-
-    def format_msg(self, msg, user):
-        data = dict()
-        data["user"] = str(user)
-        data["msg"] = msg
-        print msg
-        return json.dumps(data)
+            u.send(pkt)
 
