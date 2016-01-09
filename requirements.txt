@@ -1,10 +1,8 @@
-crypto (1.4.1)
-Naked (0.1.31)
-pip (7.1.2)
-pycrypto (2.6.1)
-pysha3 (0.3)
-PyYAML (3.11)
-requests (2.8.1)
-setuptools (18.2)
-shellescape (3.4.1)
-wheel (0.24.0)
+crypto==1.4.1
+Naked==0.1.31
+pycrypto==2.6.1
+pysha3==0.3
+PyYAML==3.11
+requests==2.8.1
+shellescape==3.4.1
+wheel==0.24.0
